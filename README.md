@@ -13,9 +13,9 @@
         h264-base // contains all info, how to create the h264-base profile
     workers
         my.transcoder.hostname/
-            19287321.pid // random worker id, with the pid
-            19287321.location // the target directory for the worker
-            19287321.log // ffmpeg log for the worker
+            F0089ED4-CCB6-4BF4-B430-7E7091CA93C0.pid // random worker id, with the pid
+            F0089ED4-CCB6-4BF4-B430-7E7091CA93C0.location // the target directory for the worker
+            F0089ED4-CCB6-4BF4-B430-7E7091CA93C0.log // ffmpeg log for the worker
     incoming
         
 
