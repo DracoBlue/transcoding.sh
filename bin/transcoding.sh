@@ -204,18 +204,26 @@ function transcoding_start_worker {
 }
 
 function transcoding_worker_status {
-	WORKER_ID=$1
-	WORKER_PID=`transcoding_pid_by_workerid $WORKER_ID`
+	WORKER_IDS=$1
 
-	WORKER_SYSTEM_STATS=`UNIX95=;LANG=en_US.UTF8 ps -p $WORKER_PID -o pid,%cpu,%mem,etime,lstart | tail -n 1 | tr -s ' '`
-	WORKER_CPU=`echo "$WORKER_SYSTEM_STATS" | cut -f '2' -d ' '`
-	WORKER_MEM=`echo "$WORKER_SYSTEM_STATS" | cut -f '3' -d ' '`
-	WORKER_TIME=`echo "$WORKER_SYSTEM_STATS" | cut -f '4' -d ' '`
-	WORKER_START_TIME=`echo "$WORKER_SYSTEM_STATS" | cut -f '5-8' -d ' '`
-	echo "worker cpu: $WORKER_CPU"
-	echo "worker mem: $WORKER_MEM"
-	echo "worker time: $WORKER_TIME"
-	echo "worker start time: $WORKER_START_TIME"
+	if [ -z "$WORKER_IDS" ]
+	then
+		WORKER_IDS=`transcoding_list_workers`
+	fi
+
+	for WORKER_ID in $WORKER_IDS
+	do
+		WORKER_PID=`transcoding_pid_by_workerid $WORKER_ID`
+		WORKER_SYSTEM_STATS=`UNIX95=;LANG=en_US.UTF8 ps -p $WORKER_PID -o pid,%cpu,%mem,etime,lstart | tail -n 1 | tr -s ' '`
+		WORKER_CPU=`echo "$WORKER_SYSTEM_STATS" | cut -f '2' -d ' '`
+		WORKER_MEM=`echo "$WORKER_SYSTEM_STATS" | cut -f '3' -d ' '`
+		WORKER_TIME=`echo "$WORKER_SYSTEM_STATS" | cut -f '4' -d ' '`
+		WORKER_START_TIME=`echo "$WORKER_SYSTEM_STATS" | cut -f '5-8' -d ' '`
+		echo "worker cpu: $WORKER_CPU"
+		echo "worker mem: $WORKER_MEM"
+		echo "worker time: $WORKER_TIME"
+		echo "worker start time: $WORKER_START_TIME"
+	done
 }
 
 function transcoding_stop_worker {
