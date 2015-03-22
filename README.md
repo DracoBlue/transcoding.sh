@@ -54,7 +54,9 @@ ffmpeg $KEY
 
 ## Error handling
 
-If creation of the target file fails, the entire `$TARGET_DIRECTORY` will be cleaned up.
+If creation of the target file is aborted (with `stop-worker` or `kill -9` to the ffmpeg process),
+the entire `$TARGET_DIRECTORY` will be cleaned up. If the `ffmpeg` process dies for other reasons,
+the `status.json` file will contain `{"state": "error"}`.
 
 You can check for dead workers with the following command:
 ``` console
