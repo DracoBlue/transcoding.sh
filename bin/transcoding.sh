@@ -112,19 +112,17 @@ function transcoding_cleanup_worker {
 	return 0
 }
 
-function transcoding_handle_ffmpeg_exit_code {
+function transcoding_abort_worker {
 	WORKER_ID=$1
-	FFMPEG_EXIT_CODE=$2
 
-	if [ ! "$FFMPEG_EXIT_CODE" == "0" ]
-	then
-		transcoding_cleanup_target_directory_for_worker $WORKER_ID
-		echo "Ffmpeg did not finish properly (code: $FFMPEG_EXIT_CODE)!" >&2
-	fi
+	transcoding_debug_output "aborting worker $WORKER_ID"
+	# wait for ffmpeg to sig really
+	sleep 1
 
+	transcoding_cleanup_target_directory_for_worker $WORKER_ID
 	transcoding_cleanup_worker $WORKER_ID
 
-	exit $FFMPEG_EXIT_CODE
+	return 0
 }
 
 function transcoding_start_worker {
@@ -176,7 +174,7 @@ function transcoding_start_worker {
 			echo '{"state": "initializing"}' > $STATUS_FILEPATH
 			transcoding_set_profile_property $STATUS_FILEPATH "state" "running"
 
-			trap "{ transcoding_handle_ffmpeg_exit_code $WORKER_ID 255; exit $? }" SIGINT SIGTERM
+			trap "{ transcoding_abort_worker $WORKER_ID; exit \$?; }" SIGINT SIGTERM
 
 			if [ -f "$PROFILE_ENV_FILEPATH" ]
 			then
@@ -192,11 +190,21 @@ function transcoding_start_worker {
 
 			if [ "$FFMPEG_EXIT_CODE" == "0" ]
 			then
-				transcoding_set_profile_property $STATUS_FILEPATH "state" "finished"
 				echo "Ffmpeg finished with exit code $FFMPEG_EXIT_CODE!"
+				transcoding_set_profile_property $STATUS_FILEPATH "state" "finished"
+				transcoding_cleanup_worker $WORKER_ID
+			else
+				if (( "$FFMPEG_EXIT_CODE" == "255" )) || (( "$FFMPEG_EXIT_CODE" == "137" ))
+				then
+					echo "Ffmpeg was killed (code: $FFMPEG_EXIT_CODE)!" >&2
+					transcoding_abort_worker $WORKER_ID
+				else
+					echo "Ffmpeg did not finish properly (code: $FFMPEG_EXIT_CODE)!" >&2
+					transcoding_set_profile_property $STATUS_FILEPATH "state" "error"
+					transcoding_cleanup_worker $WORKER_ID
+				fi
 			fi
 
-			transcoding_handle_ffmpeg_exit_code $WORKER_ID $FFMPEG_EXIT_CODE
         fi
     done
 
