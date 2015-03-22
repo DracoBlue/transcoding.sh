@@ -230,7 +230,7 @@ function transcoding_stop_worker {
 	WORKER_ID=$1
 	WORKER_PID=`transcoding_pid_by_workerid $WORKER_ID`
 
-	kill $WORKER_PID
+	kill -2 $WORKER_PID
 	return 0
 }
 
