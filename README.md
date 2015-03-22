@@ -6,11 +6,11 @@
         asset/path/even/with/subfolders/ // asset path
                 source // generic profile for the source file
                     123456.mp4
-                h264-base // profile name
+                h264-baseline-3-0 // profile name
                     status.json => contains the transcoding status
                     123456.mp4
     profiles/
-        h264-base // contains all info, how to create the h264-base profile
+        h264-baseline-3-0 // contains all info, how to create the h264-baseline-3-0 profile
     workers
         my.transcoder.hostname/
             F0089ED4-CCB6-4BF4-B430-7E7091CA93C0.pid // random worker id, with the pid
@@ -19,7 +19,7 @@
     incoming
         
 
-## Profile file (e.g. `h264-base`)
+## Profile file (e.g. `h264-baseline-3-0`)
 
 Will be sourced to generate the profile, might be a ffmpeg call with `&` at the end
 
