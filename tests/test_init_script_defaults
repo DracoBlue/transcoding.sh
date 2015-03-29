@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# setup test directory
+
+TEST_NAME=`basename $0 | cut -f '2-' -d '_'`
+
+if [ -z "$TEST_NAME" ]
+then
+	echo "The basename of this testscript should not be empty!" >&2
+	exit 1
+fi
+
+if [ -d results/$TEST_NAME ]
+then
+	rm -rf results/$TEST_NAME
+fi
+
+mkdir results/$TEST_NAME
+
+cd results/$TEST_NAME
+
+yes 1 | ./../../../bin/transcoding-init.sh
+TRANSCODING_INIT_EXIT_CODE=$?
+
+if [ ! "$TRANSCODING_INIT_EXIT_CODE" == "0" ]
+then
+	exit 1
+fi
+
+exit 0

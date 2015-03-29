@@ -97,7 +97,7 @@ echo "Setting up assets and workers directory."
 mkdir assets workers
 
 echo "Add test video (Big Buck Bunny 60 seconds version)?"
-select ANSWER in "Yes" "No"
+select ANSWER in "No" "Yes"
 do
 	case $ANSWER in
 		Yes )
