@@ -171,7 +171,14 @@ function transcoding_start_worker {
         else
 			echo -n "$TARGET_DIRECTORY" > $WORKER_LOCATION_FILE
 			echo -n "" > $WORKER_PID_FILE
-			echo '{"state": "initializing"}' > $STATUS_FILEPATH
+			echo "{\"state\": \"initializing\", \"worker\": \"$WORKER_ID\"}" > $STATUS_FILEPATH
+
+			# FIXME: better check for worker id would be great
+			if [ -z "`cat $STATUS_FILEPATH | grep $WORKER_ID`" ]
+			then
+				echo "we lost the job, because another worker started at the same time. let's continue with the next"
+				continue
+			fi
 			transcoding_set_profile_property $STATUS_FILEPATH "state" "running"
 
 			trap "{ transcoding_abort_worker $WORKER_ID; exit \$?; }" SIGINT SIGTERM
