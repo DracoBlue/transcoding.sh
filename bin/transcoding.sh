@@ -11,15 +11,20 @@ function transcoding_error_and_exit {
 	exit 1
 }
 
-function transcoding_set_profile_property {
-	FILEPATH=$1
-	KEY=$2
-	VALUE=$3
+function transcoding_jq_command {
 	JQ_COMMAND="jq"
 	if [ -f "vendor/jq" ]
 	then
 		JQ_COMMAND=vendor/jq
 	fi
+	echo $JQ_COMMAND
+}
+
+function transcoding_set_profile_property {
+	FILEPATH=$1
+	KEY=$2
+	VALUE=$3
+	JQ_COMMAND=`transcoding_jq_command`
 
 	TMP_FILEPATH="${FILEPATH}.part"
 	cat $FILEPATH | $JQ_COMMAND .$KEY=\"$VALUE\" > $TMP_FILEPATH && mv $TMP_FILEPATH $FILEPATH
@@ -187,7 +192,7 @@ function transcoding_start_worker {
 			then
 				source $PROFILE_ENV_FILEPATH
 			fi
-            source "profiles/$PROFILE_NAME"
+			source profiles/$PROFILE_NAME
 			FFMPEG_PID=$!
 			echo -n "$FFMPEG_PID" > $WORKER_PID_FILE
 			echo "Launched ffmpeg with pid: $FFMPEG_PID"
@@ -219,7 +224,7 @@ function transcoding_start_worker {
     transcoding_debug_output "done"
 }
 
-function transcoding_worker_status {
+function transcoding_workers_status {
 	WORKER_IDS=$1
 
 	if [ -z "$WORKER_IDS" ]
@@ -227,19 +232,32 @@ function transcoding_worker_status {
 		WORKER_IDS=`transcoding_list_workers`
 	fi
 
+	echo "["
+	IS_FIRST_WORKER=1
 	for WORKER_ID in $WORKER_IDS
 	do
+		if [ "$IS_FIRST_WORKER" == "1" ]
+		then
+			IS_FIRST_WORKER=0
+		else
+			echo ","
+		fi
 		WORKER_PID=`transcoding_pid_by_workerid $WORKER_ID`
 		WORKER_SYSTEM_STATS=`UNIX95=;LANG=en_US.UTF8 ps -p $WORKER_PID -o pid,%cpu,%mem,etime,lstart | tail -n 1 | tr -s ' '`
 		WORKER_CPU=`echo "$WORKER_SYSTEM_STATS" | cut -f '2' -d ' '`
 		WORKER_MEM=`echo "$WORKER_SYSTEM_STATS" | cut -f '3' -d ' '`
 		WORKER_TIME=`echo "$WORKER_SYSTEM_STATS" | cut -f '4' -d ' '`
 		WORKER_START_TIME=`echo "$WORKER_SYSTEM_STATS" | cut -f '5-8' -d ' '`
-		echo "worker cpu: $WORKER_CPU"
-		echo "worker mem: $WORKER_MEM"
-		echo "worker time: $WORKER_TIME"
-		echo "worker start time: $WORKER_START_TIME"
+		JQ_COMMAND=`transcoding_jq_command`
+
+		echo -n '{}' \
+			| $JQ_COMMAND .id=\""$WORKER_ID\"" \
+			| $JQ_COMMAND .cpu="$WORKER_CPU" \
+			| $JQ_COMMAND .mem="$WORKER_MEM" \
+			| $JQ_COMMAND .duration=\""$WORKER_TIME"\" \
+			| $JQ_COMMAND .startTime=\""$WORKER_START_TIME"\"
 	done
+	echo "]"
 }
 
 function transcoding_stop_worker {
@@ -327,8 +345,8 @@ case "$COMMAND" in
         transcoding_stop_worker $2
         exit $?
         ;;
-    "worker-status")
-    	transcoding_worker_status $2
+    "workers-status")
+    	transcoding_workers_status $2
         exit $?
         ;;
 	"stop-workers")
