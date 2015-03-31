@@ -71,21 +71,21 @@ do
 			mkdir profiles
 			# iOS h264 profiles from https://trac.ffmpeg.org/wiki/Encode/H.264
 			echo '# All devices iOS devices' > "profiles/h264-baseline-3-0"
-			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v baseline -level 3.0 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME &' >> "profiles/h264-baseline-3-0"
+			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v baseline -level 3.0 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME 2>$WORKER_LOG_FILE &' >> "profiles/h264-baseline-3-0"
 			echo '# iPhone 3G and later, iPod touch 2nd generation and later' > "profiles/h264-baseline-3-1"
-			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v baseline -level 3.1 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME &' >> "profiles/h264-baseline-3-1"
+			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v baseline -level 3.1 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME 2>$WORKER_LOG_FILE &' >> "profiles/h264-baseline-3-1"
 			echo '# iPad (all versions), Apple TV 2 and later, iPhone 4 and later' > "profiles/h264-main-3-1"
-			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v main -level 3.1 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME &' >> "profiles/h264-main-3-1"
+			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v main -level 3.1 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME 2>$WORKER_LOG_FILE &' >> "profiles/h264-main-3-1"
 			echo '# Apple TV 3 and later, iPad 2 and later, iPhone 4s and later' > "profiles/h264-main-4-0"
-			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v main -level 4.0 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME &' >> "profiles/h264-main-4-0"
+			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v main -level 4.0 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME 2>$WORKER_LOG_FILE &' >> "profiles/h264-main-4-0"
 			echo '# Apple TV 3 and later, iPad 2 and later, iPhone 4s and later' > "profiles/h264-high-4-0"
-			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v high -level 4.0 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME &' >> "profiles/h264-high-4-0"
+			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v high -level 4.0 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME 2>$WORKER_LOG_FILE &' >> "profiles/h264-high-4-0"
 			echo '# iPad 2 and later, iPhone 4s and later, iPhone 5c and later' > "profiles/h264-high-4-1"
-			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v high -level 4.1 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME &' >> "profiles/h264-high-4-1"
+			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v high -level 4.1 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME 2>$WORKER_LOG_FILE &' >> "profiles/h264-high-4-1"
 			echo '# iPad Air and later, iPhone 5s and later' > "profiles/h264-high-4-2"
-			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v high -level 4.2 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME &' >> "profiles/h264-high-4-2"
+			echo 'ffmpeg -i $SOURCE_FILEPATH -c:v libx264 -profile:v high -level 4.2 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME 2>$WORKER_LOG_FILE &' >> "profiles/h264-high-4-2"
 			echo '# All devices iOS devices' > "profiles/hls-h264-baseline-3-0"
-			echo 'ffmpeg -i $SOURCE_FILEPATH  -acodec aac -vcodec libx264 -profile:v baseline -level 3.0 -strict -2 -f segment -vbsf h264_mp4toannexb -flags -global_header -segment_format mpegts -segment_list $TARGET_DIRECTORY/index.m3u8 -segment_time 10 $TARGET_DIRECTORY/part%05d.ts &' >> "profiles/hls-h264-baseline-3-0"
+			echo 'ffmpeg -i $SOURCE_FILEPATH  -acodec aac -vcodec libx264 -profile:v baseline -level 3.0 -strict -2 -f segment -vbsf h264_mp4toannexb -flags -global_header -segment_format mpegts -segment_list $TARGET_DIRECTORY/index.m3u8 -segment_time 10 $TARGET_DIRECTORY/part%05d.ts 2>$WORKER_LOG_FILE &' >> "profiles/hls-h264-baseline-3-0"
 			break;;
 		No )
 			mkdir profiles
