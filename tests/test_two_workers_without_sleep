@@ -34,9 +34,9 @@ mkdir -p assets/a-video-file/source assets/a-video-file/h264-baseline-3-1
 ln -s ./../../../../../fixtures/big_buck_bunny.mp4 assets/a-video-file/source/big_buck_bunny.mp4
 
 ./../../../bin/transcoding.sh start-worker 2 &
-$FIRST_PID=$?
+FIRST_PID=$!
 ./../../../bin/transcoding.sh start-worker 2 &
-$SECOND_PID=$?
+SECOND_PID=$!
 
 wait $FIRST_PID
 FIRST_EXIT_CODE=$?
