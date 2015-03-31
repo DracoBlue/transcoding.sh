@@ -193,6 +193,7 @@ function transcoding_start_worker {
 				echo "Ffmpeg finished with exit code $FFMPEG_EXIT_CODE!"
 				transcoding_set_profile_property $STATUS_FILEPATH "state" "finished"
 				transcoding_cleanup_worker $WORKER_ID
+				exit 0
 			else
 				if (( "$FFMPEG_EXIT_CODE" == "255" )) || (( "$FFMPEG_EXIT_CODE" == "137" ))
 				then
@@ -203,9 +204,9 @@ function transcoding_start_worker {
 					transcoding_set_profile_property $STATUS_FILEPATH "state" "error"
 					transcoding_cleanup_worker $WORKER_ID
 				fi
+				exit 1
 			fi
-
-        fi
+		fi
     done
 
     transcoding_debug_output "done"
