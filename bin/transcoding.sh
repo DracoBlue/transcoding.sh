@@ -161,9 +161,12 @@ function transcoding_get_worker_progress {
 function transcoding_abort_worker {
 	WORKER_ID=$1
 
+	WORKER_PID=`transcoding_pid_by_workerid $WORKER_ID`
+
 	transcoding_debug_output "aborting worker $WORKER_ID"
+
 	# wait for ffmpeg to sig really
-	sleep 1
+	wait $WORKER_PID
 
 	transcoding_cleanup_target_directory_for_worker $WORKER_ID
 	transcoding_cleanup_worker $WORKER_ID
