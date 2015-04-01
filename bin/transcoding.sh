@@ -115,30 +115,12 @@ function transcoding_cleanup_worker {
 	WORKER_ID=$1
 
 	WORKER_HOSTNAME=`hostname`
-	WORKER_PID_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.pid
-	WORKER_LOCATION_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.location
-	WORKER_LOG_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.log
-	WORKER_PROFILE_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.profile
 
-	if [ -f $WORKER_PID_FILE ]
-	then
-		rm $WORKER_PID_FILE
-	fi
-
-	if [ -f $WORKER_LOCATION_FILE ]
-	then
-		rm $WORKER_LOCATION_FILE
-	fi
-
-	if [ -f $WORKER_LOG_FILE ]
-	then
-		rm $WORKER_LOG_FILE
-	fi
-
-	if [ -f $WORKER_PROFILE_FILE ]
-	then
-		rm $WORKER_PROFILE_FILE
-	fi
+	rm -f \
+		workers/$WORKER_HOSTNAME/$WORKER_ID.pid \
+		workers/$WORKER_HOSTNAME/$WORKER_ID.location \
+		workers/$WORKER_HOSTNAME/$WORKER_ID.log \
+		workers/$WORKER_HOSTNAME/$WORKER_ID.profile
 
 	return 0
 }
@@ -311,7 +293,7 @@ function transcoding_workers_status {
 		JQ_COMMAND=`transcoding_jq_command`
 
 		[[ $WORKER_TIME =~ ((.*)-)?((.*):)?(.*):(.*) ]]
-		WORKER_DURATION=`printf "%d\n" $((BASH_REMATCH[2] * 60 * 60 * 24 + BASH_REMATCH[4] * 60 * 60 + BASH_REMATCH[5] * 60 + BASH_REMATCH[6]))`
+		WORKER_DURATION=$((BASH_REMATCH[2] * 60 * 60 * 24 + BASH_REMATCH[4] * 60 * 60 + BASH_REMATCH[5] * 60 + BASH_REMATCH[6]))
 
 		WORKER_HOSTNAME=`hostname`
 		WORKER_LOCATION_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.location
