@@ -293,7 +293,7 @@ function transcoding_workers_status {
 		JQ_COMMAND=`transcoding_jq_command`
 
 		[[ $WORKER_TIME =~ ((.*)-)?((.*):)?(.*):(.*) ]]
-		WORKER_DURATION=$((BASH_REMATCH[2] * 60 * 60 * 24 + BASH_REMATCH[4] * 60 * 60 + BASH_REMATCH[5] * 60 + BASH_REMATCH[6]))
+		WORKER_DURATION=`printf "%d\n" $((BASH_REMATCH[2] * 60 * 60 * 24 + BASH_REMATCH[4] * 60 * 60 + BASH_REMATCH[5] * 60 + BASH_REMATCH[6]))`
 
 		WORKER_HOSTNAME=`hostname`
 		WORKER_LOCATION_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.location
@@ -308,7 +308,7 @@ function transcoding_workers_status {
 			| $JQ_COMMAND .totalFrames="$WORKER_TOTAL_FRAMES" \
 			| $JQ_COMMAND .cpu="$WORKER_CPU" \
 			| $JQ_COMMAND .mem="$WORKER_MEM" \
-			| $JQ_COMMAND .duration=\""$WORKER_DURATION"\" \
+			| $JQ_COMMAND .duration="$WORKER_DURATION" \
 			| $JQ_COMMAND .startTimestamp="$WORKER_START_TIMESTAMP"
 	done
 	echo "]"
