@@ -94,8 +94,7 @@ function transcoding_pid_by_workerid {
 		transcoding_error_and_exit "error: cannot find pid file for workerid $WORKER_ID"
 	fi
 
-	WORKER_PID=`cat workers/$WORKER_HOSTNAME/$WORKER_ID.pid`
-	echo $WORKER_PID
+	cat workers/$WORKER_HOSTNAME/$WORKER_ID.pid
 }
 
 function transcoding_cleanup_target_directory_for_worker {
@@ -233,7 +232,7 @@ function transcoding_start_worker {
 			# FIXME: better check for worker id would be great
 			if [ -z "`cat $STATUS_FILEPATH | grep $WORKER_ID`" ]
 			then
-				echo "we lost the job, because another worker started at the same time. let's continue with the next"
+				transcoding_debug_output "we lost the job, because another worker started at the same time. let's continue with the next"
 				continue
 			fi
 			transcoding_set_profile_property $STATUS_FILEPATH "state" "running"
@@ -254,14 +253,14 @@ function transcoding_start_worker {
 			source profiles/$PROFILE_NAME
 			FFMPEG_PID=$!
 			echo -n "$FFMPEG_PID" > $WORKER_PID_FILE
-			echo "Launched ffmpeg with pid: $FFMPEG_PID"
-			echo "Waiting for ffmpeg to finish ..."
+			transcoding_debug_output "Launched ffmpeg with pid: $FFMPEG_PID"
+			transcoding_debug_output "Waiting for ffmpeg to finish ..."
 			wait $FFMPEG_PID
 			FFMPEG_EXIT_CODE=$?
 
 			if [ "$FFMPEG_EXIT_CODE" == "0" ]
 			then
-				echo "Ffmpeg finished with exit code $FFMPEG_EXIT_CODE!"
+				transcoding_debug_output "Ffmpeg finished with exit code $FFMPEG_EXIT_CODE!"
 				transcoding_set_profile_property $STATUS_FILEPATH "state" "finished"
 				transcoding_set_profile_property $STATUS_FILEPATH "endTimestamp" "`date -u +%FT%TZ`"
 				transcoding_cleanup_worker $WORKER_ID
@@ -269,10 +268,10 @@ function transcoding_start_worker {
 			else
 				if (( "$FFMPEG_EXIT_CODE" == "255" )) || (( "$FFMPEG_EXIT_CODE" == "137" ))
 				then
-					echo "Ffmpeg was killed (code: $FFMPEG_EXIT_CODE)!" >&2
+					transcoding_debug_output "Ffmpeg was killed (code: $FFMPEG_EXIT_CODE)!" >&2
 					transcoding_abort_worker $WORKER_ID
 				else
-					echo "Ffmpeg did not finish properly (code: $FFMPEG_EXIT_CODE)!" >&2
+					transcoding_debug_output "Ffmpeg did not finish properly (code: $FFMPEG_EXIT_CODE)!" >&2
 					transcoding_set_profile_property $STATUS_FILEPATH "state" "error"
 					transcoding_cleanup_worker $WORKER_ID
 				fi
