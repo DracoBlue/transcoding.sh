@@ -194,16 +194,19 @@ function transcoding_start_worker {
     find assets -type d -empty | while read TARGET_DIRECTORY
     do
         transcoding_debug_output "target directory: $TARGET_DIRECTORY"
-        PROFILE_NAME=`basename $TARGET_DIRECTORY`
-        SOURCE_DIRECTORY=`dirname $TARGET_DIRECTORY`/source
-        PROFILE_ENV_FILEPATH=`dirname $TARGET_DIRECTORY`/$PROFILE_NAME.env
-        SOURCE_FILENAME=`ls $SOURCE_DIRECTORY | head -n 1`
-        SOURCE_FILEPATH=$SOURCE_DIRECTORY/$SOURCE_FILENAME
-        STATUS_FILEPATH=$TARGET_DIRECTORY/status.json
+        export PROFILE_NAME=`basename $TARGET_DIRECTORY`
+        export SOURCE_DIRECTORY=`dirname $TARGET_DIRECTORY`/source
+        export PROFILE_ENV_FILEPATH=`dirname $TARGET_DIRECTORY`/$PROFILE_NAME.env
+        export PROFILE_TOTAL_FRAMES_FILEPATH=profiles/$PROFILE_NAME.totalFrames
+        export PROFILE_CURRENT_FRAME_FILEPATH=profiles/$PROFILE_NAME.currentFrame
+        export SOURCE_FILENAME=`ls $SOURCE_DIRECTORY | head -n 1`
+        export SOURCE_FILEPATH=$SOURCE_DIRECTORY/$SOURCE_FILENAME
+        export STATUS_FILEPATH=$TARGET_DIRECTORY/status.json
 
-        WORKER_PID_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.pid
-        WORKER_LOCATION_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.location
-        WORKER_LOG_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.log
+        export WORKER_PID_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.pid
+        export WORKER_LOCATION_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.location
+        export WORKER_LOG_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.log
+        export WORKER_PROFILE_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.profile
 
         transcoding_debug_output "worker pid file: $WORKER_PID_FILE"
         transcoding_debug_output "profile name: $PROFILE_NAME"
@@ -297,13 +300,26 @@ function transcoding_workers_status {
 		WORKER_MEM=`echo "$WORKER_SYSTEM_STATS" | cut -f '3' -d ' '`
 		WORKER_TIME=`echo "$WORKER_SYSTEM_STATS" | cut -f '4' -d ' '`
 		WORKER_START_TIME=`echo "$WORKER_SYSTEM_STATS" | cut -f '5-8' -d ' '`
+		WORKER_CURRENT_FRAME=`transcoding_get_worker_progress $WORKER_ID`
+
 		JQ_COMMAND=`transcoding_jq_command`
+
+		[[ $WORKER_TIME =~ ((.*)-)?((.*):)?(.*):(.*) ]]
+		WORKER_DURATION=`printf "%d\n" $((BASH_REMATCH[2] * 60 * 60 * 24 + BASH_REMATCH[4] * 60 * 60 + BASH_REMATCH[5] * 60 + BASH_REMATCH[6]))`
+
+		WORKER_HOSTNAME=`hostname`
+		WORKER_LOCATION_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.location
+		TARGET_DIRECTORY=`cat $WORKER_LOCATION_FILE`
+        STATUS_FILEPATH=$TARGET_DIRECTORY/status.json
+		WORKER_TOTAL_FRAMES=`cat $STATUS_FILEPATH | $JQ_COMMAND '.totalFrames | tonumber'`
 
 		echo -n '{}' \
 			| $JQ_COMMAND .id=\""$WORKER_ID\"" \
+			| $JQ_COMMAND .currentFrame="$WORKER_CURRENT_FRAME" \
+			| $JQ_COMMAND .totalFrames="$WORKER_TOTAL_FRAMES" \
 			| $JQ_COMMAND .cpu="$WORKER_CPU" \
 			| $JQ_COMMAND .mem="$WORKER_MEM" \
-			| $JQ_COMMAND .duration=\""$WORKER_TIME"\" \
+			| $JQ_COMMAND .duration=\""$WORKER_DURATION"\" \
 			| $JQ_COMMAND .startTime=\""$WORKER_START_TIME"\"
 	done
 	echo "]"
