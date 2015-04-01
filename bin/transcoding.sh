@@ -31,6 +31,11 @@ function transcoding_set_profile_property {
 }
 
 function transcoding_check_dependencies {
+	if [ "${BASH_VERSINFO[0]}" == "1" ]
+	then
+		transcoding_error_and_exit "error: you need at least bash 2.0 to use transcoding.sh"
+	fi
+
 	if [ -z `which uuidgen` ]
 	then
 		transcoding_error_and_exit "error: please install uuidgen to use transcoding.sh"
