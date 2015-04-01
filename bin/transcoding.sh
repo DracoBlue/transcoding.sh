@@ -36,6 +36,10 @@ function transcoding_check_dependencies {
 		transcoding_error_and_exit "error: you need at least bash 2.0 to use transcoding.sh"
 	fi
 
+	if [ -z `which date` ]
+	then
+		transcoding_error_and_exit "error: please install date to use transcoding.sh"
+	fi
 	if [ -z `which uuidgen` ]
 	then
 		transcoding_error_and_exit "error: please install uuidgen to use transcoding.sh"
@@ -224,7 +228,7 @@ function transcoding_start_worker {
 			echo -n "$TARGET_DIRECTORY" > $WORKER_LOCATION_FILE
 			echo -n "$PROFILE_NAME" > $WORKER_PROFILE_FILE
 			echo -n "" > $WORKER_PID_FILE
-			echo "{\"state\": \"initializing\", \"worker\": \"$WORKER_ID\"}" > $STATUS_FILEPATH
+			echo "{\"state\": \"initializing\", \"worker\": \"$WORKER_ID\", \"startTimestamp\": \"`date -u +%FT%TZ`\"}" > $STATUS_FILEPATH
 
 			# FIXME: better check for worker id would be great
 			if [ -z "`cat $STATUS_FILEPATH | grep $WORKER_ID`" ]
@@ -259,6 +263,7 @@ function transcoding_start_worker {
 			then
 				echo "Ffmpeg finished with exit code $FFMPEG_EXIT_CODE!"
 				transcoding_set_profile_property $STATUS_FILEPATH "state" "finished"
+				transcoding_set_profile_property $STATUS_FILEPATH "endTimestamp" "`date -u +%FT%TZ`"
 				transcoding_cleanup_worker $WORKER_ID
 				exit 0
 			else
@@ -298,11 +303,10 @@ function transcoding_workers_status {
 			echo ","
 		fi
 		WORKER_PID=`transcoding_pid_by_workerid $WORKER_ID`
-		WORKER_SYSTEM_STATS=`UNIX95=;LANG=en_US.UTF8 ps -p $WORKER_PID -o pid,%cpu,%mem,etime,lstart | tail -n 1 | tr -s ' '`
+		WORKER_SYSTEM_STATS=`UNIX95=;LANG=en_US.UTF8 ps -p $WORKER_PID -o pid,%cpu,%mem,etime | tail -n 1 | tr -s ' '`
 		WORKER_CPU=`echo "$WORKER_SYSTEM_STATS" | cut -f '2' -d ' '`
 		WORKER_MEM=`echo "$WORKER_SYSTEM_STATS" | cut -f '3' -d ' '`
 		WORKER_TIME=`echo "$WORKER_SYSTEM_STATS" | cut -f '4' -d ' '`
-		WORKER_START_TIME=`echo "$WORKER_SYSTEM_STATS" | cut -f '5-8' -d ' '`
 		WORKER_CURRENT_FRAME=`transcoding_get_worker_progress $WORKER_ID`
 
 		JQ_COMMAND=`transcoding_jq_command`
@@ -315,6 +319,7 @@ function transcoding_workers_status {
 		TARGET_DIRECTORY=`cat $WORKER_LOCATION_FILE`
         STATUS_FILEPATH=$TARGET_DIRECTORY/status.json
 		WORKER_TOTAL_FRAMES=`cat $STATUS_FILEPATH | $JQ_COMMAND '.totalFrames | tonumber'`
+		WORKER_START_TIMESTAMP=`cat $STATUS_FILEPATH | $JQ_COMMAND '.startTimestamp'`
 
 		echo -n '{}' \
 			| $JQ_COMMAND .id=\""$WORKER_ID\"" \
@@ -323,7 +328,7 @@ function transcoding_workers_status {
 			| $JQ_COMMAND .cpu="$WORKER_CPU" \
 			| $JQ_COMMAND .mem="$WORKER_MEM" \
 			| $JQ_COMMAND .duration=\""$WORKER_DURATION"\" \
-			| $JQ_COMMAND .startTime=\""$WORKER_START_TIME"\"
+			| $JQ_COMMAND .startTimestamp="$WORKER_START_TIMESTAMP"
 	done
 	echo "]"
 }
