@@ -140,6 +140,24 @@ function transcoding_cleanup_worker {
 	return 0
 }
 
+function transcoding_get_worker_progress {
+	export WORKER_ID=$1
+
+	export WORKER_HOSTNAME=`hostname`
+	export WORKER_PID_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.pid
+	export WORKER_LOCATION_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.location
+	export WORKER_LOG_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.log
+
+	export PROFILE_NAME=`transcoding_profile_by_workerid $WORKER_ID`
+
+	if [ -f "profiles/$PROFILE_NAME.currentFrame" ]
+	then
+		profiles/$PROFILE_NAME.currentFrame
+	else
+		echo "0"
+	fi
+}
+
 function transcoding_abort_worker {
 	WORKER_ID=$1
 
