@@ -234,6 +234,13 @@ function transcoding_start_worker {
 			then
 				source $PROFILE_ENV_FILEPATH
 			fi
+
+			if [ -f "$PROFILE_TOTAL_FRAMES_FILEPATH" ]
+			then
+				export TOTAL_FRAMES=`$PROFILE_TOTAL_FRAMES_FILEPATH`
+				transcoding_set_profile_property $STATUS_FILEPATH "totalFrames" $TOTAL_FRAMES
+			fi
+
 			source profiles/$PROFILE_NAME
 			FFMPEG_PID=$!
 			echo -n "$FFMPEG_PID" > $WORKER_PID_FILE
