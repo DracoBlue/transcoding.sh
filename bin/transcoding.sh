@@ -69,6 +69,18 @@ function transcoding_check_dependencies {
 	fi
 }
 
+function transcoding_profile_by_workerid {
+	WORKER_ID=$1
+	WORKER_HOSTNAME=`hostname`
+
+	if [ ! -f  workers/$WORKER_HOSTNAME/$WORKER_ID.profile ]
+	then
+		transcoding_error_and_exit "error: cannot find profile file for workerid $WORKER_ID"
+	fi
+
+	cat workers/$WORKER_HOSTNAME/$WORKER_ID.profile
+}
+
 function transcoding_pid_by_workerid {
 	WORKER_ID=$1
 	WORKER_HOSTNAME=`hostname`
@@ -103,6 +115,7 @@ function transcoding_cleanup_worker {
 	WORKER_PID_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.pid
 	WORKER_LOCATION_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.location
 	WORKER_LOG_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.log
+	WORKER_PROFILE_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.profile
 
 	if [ -f $WORKER_PID_FILE ]
 	then
@@ -117,6 +130,11 @@ function transcoding_cleanup_worker {
 	if [ -f $WORKER_LOG_FILE ]
 	then
 		rm $WORKER_LOG_FILE
+	fi
+
+	if [ -f $WORKER_PROFILE_FILE ]
+	then
+		rm $WORKER_PROFILE_FILE
 	fi
 
 	return 0
@@ -180,6 +198,7 @@ function transcoding_start_worker {
             transcoding_debug_output "error: cannot find profile $PROFILE_NAME in folder profiles"
         else
 			echo -n "$TARGET_DIRECTORY" > $WORKER_LOCATION_FILE
+			echo -n "$PROFILE_NAME" > $WORKER_PROFILE_FILE
 			echo -n "" > $WORKER_PID_FILE
 			echo "{\"state\": \"initializing\", \"worker\": \"$WORKER_ID\"}" > $STATUS_FILEPATH
 
