@@ -97,7 +97,7 @@ do
 			echo '# iPad Air and later, iPhone 5s and later' > "profiles/h264-high-4-2"
 			echo 'ffmpeg -i $SOURCE_FILEPATH -movflags +faststart -c:v libx264 -profile:v high -level 4.2 -strict -2 $TARGET_DIRECTORY/$SOURCE_FILENAME 2>$WORKER_LOG_FILE &' >> "profiles/h264-high-4-2"
 			echo "ffprobe -i \$SOURCE_FILEPATH -v quiet -print_format json -show_format -print_format json -show_streams | jq '.streams[] | .nb_frames | tonumber' | sort -n | tail -n 1" >> "profiles/h264-high-4-2.totalFrames"
-			echo "cat \$WORKER_LOG_FILE | tr '\r' ' ' | grep '^frame=' | rev | tr -s ' ' | cut -f '9' -d ' ' | rev" >> "profiles/profiles/h264-high-4-2.currentFrame"
+			echo "cat \$WORKER_LOG_FILE | tr '\r' ' ' | grep '^frame=' | rev | tr -s ' ' | cut -f '9' -d ' ' | rev" >> "profiles/h264-high-4-2.currentFrame"
 			echo '# All devices iOS devices' > "profiles/hls-h264-baseline-3-0"
 			echo 'ffmpeg -i $SOURCE_FILEPATH -movflags +faststart -acodec aac -vcodec libx264 -profile:v baseline -level 3.0 -strict -2 -f segment -vbsf h264_mp4toannexb -flags -global_header -segment_format mpegts -segment_list $TARGET_DIRECTORY/index.m3u8 -segment_time 10 $TARGET_DIRECTORY/part%05d.ts 2>$WORKER_LOG_FILE &' >> "profiles/hls-h264-baseline-3-0"
 			echo "ffprobe -i \$SOURCE_FILEPATH -v quiet -print_format json -show_format -print_format json -show_streams | jq '.streams[] | .nb_frames | tonumber' | sort -n | tail -n 1" >> "profiles/hls-h264-baseline-3-0.totalFrames"
