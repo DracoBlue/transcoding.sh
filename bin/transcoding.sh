@@ -27,7 +27,7 @@ function transcoding_set_profile_property {
 	JQ_COMMAND=`transcoding_jq_command`
 
 	TMP_FILEPATH="${FILEPATH}.part"
-	cat $FILEPATH | $JQ_COMMAND .$KEY=\"$VALUE\" > $TMP_FILEPATH && mv $TMP_FILEPATH $FILEPATH
+	cat $FILEPATH | $JQ_COMMAND .$KEY=$VALUE > $TMP_FILEPATH && mv $TMP_FILEPATH $FILEPATH
 }
 
 function transcoding_check_dependencies {
@@ -217,7 +217,7 @@ function transcoding_start_worker {
 				transcoding_debug_output "we lost the job, because another worker started at the same time. let's continue with the next"
 				continue
 			fi
-			transcoding_set_profile_property $STATUS_FILEPATH "state" "running"
+			transcoding_set_profile_property $STATUS_FILEPATH "state" "\"running\""
 
 			trap "{ transcoding_abort_worker $WORKER_ID; exit \$?; }" SIGINT SIGTERM
 
@@ -243,8 +243,8 @@ function transcoding_start_worker {
 			if [ "$FFMPEG_EXIT_CODE" == "0" ]
 			then
 				transcoding_debug_output "Ffmpeg finished with exit code $FFMPEG_EXIT_CODE!"
-				transcoding_set_profile_property $STATUS_FILEPATH "state" "finished"
-				transcoding_set_profile_property $STATUS_FILEPATH "endTimestamp" "`date -u +%FT%TZ`"
+				transcoding_set_profile_property $STATUS_FILEPATH "state" "\"finished\""
+				transcoding_set_profile_property $STATUS_FILEPATH "endTimestamp" "\"`date -u +%FT%TZ`\""
 				transcoding_cleanup_worker $WORKER_ID
 				exit 0
 			else
@@ -254,7 +254,7 @@ function transcoding_start_worker {
 					transcoding_abort_worker $WORKER_ID
 				else
 					transcoding_debug_output "Ffmpeg did not finish properly (code: $FFMPEG_EXIT_CODE)!" >&2
-					transcoding_set_profile_property $STATUS_FILEPATH "state" "error"
+					transcoding_set_profile_property $STATUS_FILEPATH "state" "\"error\""
 					transcoding_cleanup_worker $WORKER_ID
 				fi
 				exit 1
