@@ -138,7 +138,7 @@ function transcoding_get_worker_progress {
 
 	if [ -f "profiles/$PROFILE_NAME.currentFrame" ]
 	then
-		profiles/$PROFILE_NAME.currentFrame
+		profiles/$PROFILE_NAME.currentFrame 2>/dev/null
 	else
 		echo "0"
 	fi
