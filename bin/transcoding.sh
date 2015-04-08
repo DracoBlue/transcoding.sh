@@ -26,7 +26,8 @@ function transcoding_set_profile_property {
 	VALUE=$3
 	JQ_COMMAND=`transcoding_jq_command`
 
-	TMP_FILEPATH="${FILEPATH}.part"
+	TMP_FILEPATH="${FILEPATH}.$$.part"
+	transcoding_debug_output "writing status.json to tmp filepath $TMP_FILEPATH"
 	cat $FILEPATH | $JQ_COMMAND .$KEY=$VALUE > $TMP_FILEPATH && mv $TMP_FILEPATH $FILEPATH
 }
 
