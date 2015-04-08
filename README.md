@@ -77,5 +77,4 @@ This will remove the target directory's contents and force a new transcoding as 
 ## Feature Requests
 
 - add some kind of high prio queue, for even more important files
-- add status.json info for mem/cpu etc for current job
 - maybe extra error.json, if the job failed

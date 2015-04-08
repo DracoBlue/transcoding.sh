@@ -151,6 +151,13 @@ function transcoding_abort_worker {
 
 	transcoding_debug_output "aborting worker $WORKER_ID"
 
+	if [ ! -z "$FFMPEG_STATUS_PID" ]
+	then
+		transcoding_debug_output "aborting worker status updater with pid $FFMPEG_STATUS_PID"
+		kill $FFMPEG_STATUS_PID
+		wait $FFMPEG_STATUS_PID
+	fi
+
 	# wait for ffmpeg to sig really
 	wait $WORKER_PID
 
@@ -237,15 +244,34 @@ function transcoding_start_worker {
 			FFMPEG_PID=$!
 			echo -n "$FFMPEG_PID" > $WORKER_PID_FILE
 			transcoding_debug_output "Launched ffmpeg with pid: $FFMPEG_PID"
+
+			if [ -f "$PROFILE_CURRENT_FRAME_FILEPATH" ]
+			then
+				transcoding_constantly_sync_worker_status $WORKER_ID &
+				export FFMPEG_STATUS_PID=$!
+				transcoding_debug_output "Launched worker status updater with pid: $FFMPEG_STATUS_PID"
+			fi
 			transcoding_debug_output "Waiting for ffmpeg to finish ..."
 			wait $FFMPEG_PID
 			FFMPEG_EXIT_CODE=$?
+
+			if [ ! -z "$FFMPEG_STATUS_PID" ]
+			then
+				transcoding_debug_output "Killing worker status update with pid: $FFMPEG_STATUS_PID"
+				kill $FFMPEG_STATUS_PID
+				wait $FFMPEG_STATUS_PID
+				transcoding_debug_output "Killed worker status update with pid: $FFMPEG_STATUS_PID"
+			fi
 
 			if [ "$FFMPEG_EXIT_CODE" == "0" ]
 			then
 				transcoding_debug_output "Ffmpeg finished with exit code $FFMPEG_EXIT_CODE!"
 				transcoding_set_profile_property $STATUS_FILEPATH "state" "\"finished\""
 				transcoding_set_profile_property $STATUS_FILEPATH "endTimestamp" "\"`date -u +%FT%TZ`\""
+				if [ ! -z "$TOTAL_FRAMES" ]
+				then
+					transcoding_set_profile_property $STATUS_FILEPATH "currentFrame" $TOTAL_FRAMES
+				fi
 				transcoding_cleanup_worker $WORKER_ID
 				exit 0
 			else
@@ -268,6 +294,7 @@ function transcoding_start_worker {
 
 function transcoding_workers_status {
 	WORKER_IDS=$1
+	WORKER_HOSTNAME=`hostname`
 
 	if [ -z "$WORKER_IDS" ]
 	then
@@ -284,7 +311,45 @@ function transcoding_workers_status {
 		else
 			echo ","
 		fi
-		WORKER_PID=`transcoding_pid_by_workerid $WORKER_ID`
+		WORKER_LOCATION_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.location
+		TARGET_DIRECTORY=`cat $WORKER_LOCATION_FILE`
+        STATUS_FILEPATH=$TARGET_DIRECTORY/status.json
+        cat $STATUS_FILEPATH
+	done
+	echo "]"
+}
+
+function transcoding_stop_worker {
+	WORKER_ID=$1
+	WORKER_PID=`transcoding_pid_by_workerid $WORKER_ID`
+
+	kill -2 $WORKER_PID
+	return 0
+}
+
+function transcoding_constantly_sync_worker_status {
+	WORKER_ID=$1
+	WORKER_PID=`transcoding_pid_by_workerid $WORKER_ID`
+	WORKER_HOSTNAME=`hostname`
+	WORKER_LOCATION_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.location
+	TARGET_DIRECTORY=`cat $WORKER_LOCATION_FILE`
+	STATUS_FILEPATH=$TARGET_DIRECTORY/status.json
+	transcoding_debug_output "syncing worker status $WORKER_ID"
+
+	while true
+	do
+		transcoding_debug_output "check if worker pid $WORKER_PID is still alive"
+
+		kill -0 $WORKER_PID 2>/dev/null
+		IS_WORKER_RUNNING=$!
+
+		if [ ! "$IS_WORKER_RUNNING" == "$WORKER_PID" ]
+		then
+			transcoding_debug_output "worker pid $WORKER_PID of $WORKER_ID is dead, stopping status sync!"
+			return 0
+		fi
+		transcoding_debug_output "worker $WORKER_ID is alive"
+
 		WORKER_SYSTEM_STATS=`UNIX95=;LANG=en_US.UTF8 ps -p $WORKER_PID -o pid,%cpu,%mem,etime | tail -n 1 | tr -s ' '`
 		WORKER_CPU=`echo "$WORKER_SYSTEM_STATS" | cut -f '2' -d ' '`
 		WORKER_MEM=`echo "$WORKER_SYSTEM_STATS" | cut -f '3' -d ' '`
@@ -296,30 +361,23 @@ function transcoding_workers_status {
 		[[ $WORKER_TIME =~ ((.*)-)?((.*):)?(.*):(.*) ]]
 		WORKER_DURATION=`printf "%d\n" $((BASH_REMATCH[2] * 60 * 60 * 24 + BASH_REMATCH[4] * 60 * 60 + BASH_REMATCH[5] * 60 + BASH_REMATCH[6]))`
 
-		WORKER_HOSTNAME=`hostname`
-		WORKER_LOCATION_FILE=workers/$WORKER_HOSTNAME/$WORKER_ID.location
-		TARGET_DIRECTORY=`cat $WORKER_LOCATION_FILE`
-        STATUS_FILEPATH=$TARGET_DIRECTORY/status.json
-		WORKER_TOTAL_FRAMES=`cat $STATUS_FILEPATH | $JQ_COMMAND '.totalFrames | tonumber'`
-		WORKER_START_TIMESTAMP=`cat $STATUS_FILEPATH | $JQ_COMMAND '.startTimestamp'`
+		transcoding_debug_output "current frame $WORKER_CURRENT_FRAME"
+        if [ ! -z "${WORKER_CURRENT_FRAME##*[!0-9]*}" ]
+        then
+			TMP_STATUS_FILEPATH="${STATUS_FILEPATH}.$$.part"
+			transcoding_debug_output "syncing status.json to tmp filepath $TMP_STATUS_FILEPATH"
 
-		echo -n '{}' \
-			| $JQ_COMMAND .id=\""$WORKER_ID\"" \
-			| $JQ_COMMAND .currentFrame="$WORKER_CURRENT_FRAME" \
-			| $JQ_COMMAND .totalFrames="$WORKER_TOTAL_FRAMES" \
-			| $JQ_COMMAND .cpu="$WORKER_CPU" \
-			| $JQ_COMMAND .mem="$WORKER_MEM" \
-			| $JQ_COMMAND .duration="$WORKER_DURATION" \
-			| $JQ_COMMAND .startTimestamp="$WORKER_START_TIMESTAMP"
+			cat $STATUS_FILEPATH \
+				| $JQ_COMMAND .updateTimestamp="\"`date -u +%FT%TZ`\"" \
+				| $JQ_COMMAND .currentFrame="$WORKER_CURRENT_FRAME" \
+				| $JQ_COMMAND .cpu="$WORKER_CPU" \
+				| $JQ_COMMAND .mem="$WORKER_MEM" \
+				| $JQ_COMMAND .duration="$WORKER_DURATION" > $TMP_STATUS_FILEPATH && sleep 1 && mv $TMP_STATUS_FILEPATH $STATUS_FILEPATH
+        fi
+
+		sleep 1
 	done
-	echo "]"
-}
 
-function transcoding_stop_worker {
-	WORKER_ID=$1
-	WORKER_PID=`transcoding_pid_by_workerid $WORKER_ID`
-
-	kill -2 $WORKER_PID
 	return 0
 }
 
