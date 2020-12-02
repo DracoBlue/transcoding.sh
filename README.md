@@ -78,3 +78,7 @@ This will remove the target directory's contents and force a new transcoding as 
 
 - add some kind of high prio queue, for even more important files
 - maybe extra error.json, if the job failed
+
+## License
+
+transcoding.sh is licensed under the terms of MIT. See LICENSE for more information.
